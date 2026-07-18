@@ -1,0 +1,35 @@
+# Build outputs
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# JetBrains Rider
+.idea/
+*.DotSettings.user
+
+# VS Code
+.vscode/
+
+# Test results
+TestResults/
+*.trx
+
+# NuGet packages (restored from cache, not stored in the repo)
+*.nupkg
+*.snupkg
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local secret overrides, if you start using any
+appsettings.*.Local.json
+secrets.json
+*.pfx
