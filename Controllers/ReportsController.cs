@@ -1,4 +1,5 @@
 using InstallmentBusiness.Api.Data;
+using InstallmentBusiness.Api.DTOs;
 using InstallmentBusiness.Api.Models.Views;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,51 @@ public class ReportsController : ControllerBase
     [HttpGet("cash-ledger-by-period")]
     public async Task<ActionResult<List<CashLedgerByPeriod>>> CashLedgerByPeriod() =>
         await _db.CashLedgerByPeriod.OrderBy(x => x.Year).ThenBy(x => x.Month).ToListAsync();
+
+    // The raw transaction list behind the monthly aggregate above -- filterable
+    // and paginated, since this table grows by one row on every single cash
+    // movement for the life of the business and can't be assumed to stay small.
+    // Note: startDate/endDate/transactionType/direction are plain filters, not
+    // validated against the underlying CHECK-constraint values -- an
+    // unrecognized value just matches zero rows, same as every other optional
+    // filter elsewhere in this API.
+    [HttpGet("cash-ledger")]
+    public async Task<ActionResult<PagedCashLedgerResultDto>> CashLedger(
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] string? transactionType,
+        [FromQuery] string? direction,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 500) pageSize = 50;
+
+        var query = _db.CashLedgerEntries.AsQueryable();
+        if (startDate.HasValue) query = query.Where(c => c.TransactionDate >= startDate.Value);
+        if (endDate.HasValue) query = query.Where(c => c.TransactionDate <= endDate.Value);
+        if (!string.IsNullOrWhiteSpace(transactionType)) query = query.Where(c => c.TransactionType == transactionType);
+        if (!string.IsNullOrWhiteSpace(direction)) query = query.Where(c => c.Direction == direction);
+
+        var totalCount = await query.CountAsync();
+
+        // Constructing the DTO directly here (not via a helper method) is
+        // deliberate -- this keeps the projection translatable to SQL so
+        // Skip/Take run as a real server-side OFFSET/FETCH, not by pulling
+        // the whole table into memory first. See ReportDtos.cs / the bug
+        // history in the handover document for why this distinction matters.
+        var items = await query
+            .OrderByDescending(c => c.TransactionDate)
+            .ThenByDescending(c => c.LedgerId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new CashLedgerEntryDto(
+                c.LedgerId, c.TransactionDate, c.TransactionType, c.Direction,
+                c.Amount, c.ReferenceTable, c.ReferenceId, c.Notes, c.CreatedAt))
+            .ToListAsync();
+
+        return new PagedCashLedgerResultDto(items, totalCount, page, pageSize);
+    }
 
     [HttpGet("plan-summary")]
     public async Task<ActionResult<List<PlanSummary>>> PlanSummary() =>

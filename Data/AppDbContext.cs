@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<Withdrawal> Withdrawals => Set<Withdrawal>();
     public DbSet<CashLedger> CashLedgerEntries => Set<CashLedger>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Expense> Expenses => Set<Expense>();
 
     // Views -- keyless, read-only
     public DbSet<PlanSummary> PlanSummaries => Set<PlanSummary>();
@@ -231,6 +232,18 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.Username).IsUnique();
             e.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
             e.Property(x => x.DisplayName).HasMaxLength(100).IsRequired();
+        });
+
+        // ─── Expense ─────────────────────────────────────────────────────
+        b.Entity<Expense>(e =>
+        {
+            e.ToTable("Expenses");
+            e.HasKey(x => x.ExpenseId);
+            e.Property(x => x.Category).HasMaxLength(50).IsRequired();
+            e.Property(x => x.Amount).HasPrecision(12, 2);
+            e.Property(x => x.PaidTo).HasMaxLength(100);
+            e.Property(x => x.PaymentMethod).HasMaxLength(50);
+            e.Property(x => x.ReferenceNo).HasMaxLength(100);
         });
 
         // ─── Views: keyless, mapped read-only ───────────────────────────
