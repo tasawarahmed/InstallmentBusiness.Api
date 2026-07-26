@@ -33,18 +33,18 @@ GO
 -- 2. Migrate any existing single-guarantor data -- only if the old column
 --    still exists, and skip rows already migrated
 -- ───────────────────────────────────────────────────────────────────────────
-IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='InstallmentPlans' AND COLUMN_NAME='GuarantorId')
-BEGIN
-    INSERT INTO [dbo].[PlanGuarantors] (PlanId, GuarantorId)
-    SELECT ip.PlanId, ip.GuarantorId
-    FROM [dbo].[InstallmentPlans] ip
-    WHERE ip.GuarantorId IS NOT NULL
-    AND NOT EXISTS (
-        SELECT 1 FROM [dbo].[PlanGuarantors] pg
-        WHERE pg.PlanId = ip.PlanId AND pg.GuarantorId = ip.GuarantorId
-    )
-END
-GO
+--IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='InstallmentPlans' AND COLUMN_NAME='GuarantorId')
+--BEGIN
+--    INSERT INTO [dbo].[PlanGuarantors] (PlanId, GuarantorId)
+--    SELECT ip.PlanId, ip.GuarantorId
+--    FROM [dbo].[InstallmentPlans] ip
+--    WHERE ip.GuarantorId IS NOT NULL
+--    AND NOT EXISTS (
+--        SELECT 1 FROM [dbo].[PlanGuarantors] pg
+--        WHERE pg.PlanId = ip.PlanId AND pg.GuarantorId = ip.GuarantorId
+--    )
+--END
+--GO
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 3. Rebuild vw_GuarantorPlanCount to use the junction table
