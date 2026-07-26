@@ -1,4 +1,4 @@
-﻿namespace InstallmentBusiness.Api.Models.Entities;
+namespace InstallmentBusiness.Api.Models.Entities;
 
 // General operating expenses (rent, salaries, utilities, etc.) -- NOT tied
 // to a specific product purchase. Inserting a row here fires

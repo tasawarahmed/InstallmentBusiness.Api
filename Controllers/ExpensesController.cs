@@ -1,4 +1,4 @@
-﻿using InstallmentBusiness.Api.Data;
+using InstallmentBusiness.Api.Data;
 using InstallmentBusiness.Api.DTOs;
 using InstallmentBusiness.Api.Models.Entities;
 using Microsoft.AspNetCore.Mvc;

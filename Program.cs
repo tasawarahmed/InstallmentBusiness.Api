@@ -1,5 +1,6 @@
 using System.Text;
 using InstallmentBusiness.Api.Data;
+using InstallmentBusiness.Api.Migrations;
 using InstallmentBusiness.Api.Models.Entities;
 using InstallmentBusiness.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -79,6 +80,14 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Bring the database up to date with every embedded migration script it
+// hasn't already received (see Migrations/Scripts/*.sql and
+// Migrations/DatabaseMigrator.cs). This must run before anything else
+// touches the database -- including the admin-user seeding immediately
+// below, which needs the Users table this creates. If a script fails, this
+// throws, and the app deliberately does not start.
+DatabaseMigrator.Migrate(builder.Configuration.GetConnectionString("InstallmentBusiness")!);
 
 // Seed a single default account on first run so there's a way to log in at
 // all. CHANGE THIS PASSWORD IMMEDIATELY via POST /api/auth/change-password --

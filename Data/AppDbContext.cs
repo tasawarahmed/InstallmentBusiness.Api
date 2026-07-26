@@ -40,6 +40,7 @@ public class AppDbContext : DbContext
     public DbSet<PendingInstallment> PendingInstallments => Set<PendingInstallment>();
     public DbSet<GuarantorPlanCount> GuarantorPlanCounts => Set<GuarantorPlanCount>();
     public DbSet<CashInHand> CashInHand => Set<CashInHand>();
+    public DbSet<CustomerPayment> CustomerPayments => Set<CustomerPayment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -296,6 +297,14 @@ public class AppDbContext : DbContext
             e.HasNoKey();
             e.ToView("vw_CashInHand");
             e.Property(x => x.CashInHandAmount).HasColumnName("CashInHand");
+        });
+        b.Entity<CustomerPayment>(e =>
+        {
+            e.HasNoKey();
+            e.ToView("vw_CustomerPayments");
+            e.Property(x => x.TotalPayment).HasPrecision(12, 2);
+            e.Property(x => x.ProfitAmount).HasPrecision(12, 2);
+            e.Property(x => x.CostRecoveryAmount).HasPrecision(12, 2);
         });
     }
 }

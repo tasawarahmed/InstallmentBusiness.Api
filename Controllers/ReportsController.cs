@@ -72,6 +72,47 @@ public class ReportsController : ControllerBase
         return new PagedCashLedgerResultDto(items, totalCount, page, pageSize);
     }
 
+    // One line per customer payment (down payment or installment) in a
+    // given period, with cost-recovery/profit split per line, plus totals
+    // across the whole filtered range (not just the current page) so a
+    // totals row can be rendered under the table regardless of pagination.
+    [HttpGet("customer-payments")]
+    public async Task<ActionResult<CustomerPaymentsReportDto>> CustomerPayments(
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate,
+        [FromQuery] int? customerId,
+        [FromQuery] int? planId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 500) pageSize = 50;
+
+        var query = _db.CustomerPayments.AsQueryable();
+        if (startDate.HasValue) query = query.Where(c => c.TransactionDate >= startDate.Value);
+        if (endDate.HasValue) query = query.Where(c => c.TransactionDate <= endDate.Value);
+        if (customerId.HasValue) query = query.Where(c => c.CustomerId == customerId);
+        if (planId.HasValue) query = query.Where(c => c.PlanId == planId);
+
+        var totalCount = await query.CountAsync();
+        var totalCostRecovery = await query.SumAsync(c => c.CostRecoveryAmount);
+        var totalProfit = await query.SumAsync(c => c.ProfitAmount);
+        var totalPayments = await query.SumAsync(c => c.TotalPayment);
+
+        var items = await query
+            .OrderBy(c => c.TransactionDate)
+            .ThenBy(c => c.TransactionId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new CustomerPaymentLineDto(
+                c.TransactionId, c.TransactionDate, c.PlanId, c.CustomerName,
+                c.InstallmentNumber, c.CostRecoveryAmount, c.ProfitAmount, c.TotalPayment))
+            .ToListAsync();
+
+        return new CustomerPaymentsReportDto(
+            items, totalCount, page, pageSize, totalCostRecovery, totalProfit, totalPayments);
+    }
+
     [HttpGet("plan-summary")]
     public async Task<ActionResult<List<PlanSummary>>> PlanSummary() =>
         await _db.PlanSummaries.OrderBy(x => x.PlanId).ToListAsync();
@@ -120,3 +161,4 @@ public class ReportsController : ControllerBase
     public async Task<ActionResult<List<GuarantorPlanCount>>> GuarantorPlanCount() =>
         await _db.GuarantorPlanCounts.OrderBy(x => x.GuarantorId).ToListAsync();
 }
+

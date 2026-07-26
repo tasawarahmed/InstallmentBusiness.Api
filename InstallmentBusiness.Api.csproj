@@ -15,6 +15,14 @@
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.25" />
+    <PackageReference Include="dbup-sqlserver" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ships the migration scripts inside the compiled assembly, so a
+         deployment is a single artifact -- no separate scripts folder to
+         remember to copy alongside it. -->
+    <EmbeddedResource Include="Migrations\Scripts\*.sql" />
   </ItemGroup>
 
 </Project>

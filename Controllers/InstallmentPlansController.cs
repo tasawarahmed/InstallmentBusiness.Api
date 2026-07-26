@@ -51,6 +51,16 @@ public class InstallmentPlansController : ControllerBase
         return schedule.Select(ToScheduleDto).ToList();
     }
 
+    // Changes an installment's due date -- e.g. the customer asked for more
+    // time. Blocked once that installment is Paid or Waived; not blocked
+    // from creating an out-of-order schedule (see PlanService for why).
+    [HttpPost("{id:int}/schedule/{paymentId:int}/reschedule")]
+    public async Task<ActionResult<InstallmentScheduleItemDto>> Reschedule(int id, int paymentId, RescheduleInstallmentDto dto)
+    {
+        var installment = await _plans.RescheduleInstallmentAsync(id, paymentId, dto.NewDueDate, dto.Reason);
+        return ToScheduleDto(installment);
+    }
+
     // Creates a plan in 'Proposed' status. No installment schedule exists
     // yet -- that's only generated on Finalize.
     [HttpPost("propose")]

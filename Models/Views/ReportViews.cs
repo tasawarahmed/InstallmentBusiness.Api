@@ -103,3 +103,20 @@ public class CashInHand
 {
     public decimal CashInHandAmount { get; set; }
 }
+
+// Backs vw_CustomerPayments -- one row per payment transaction (down
+// payment or installment alike), with the cost/profit split recomputed
+// per-line using the plan's frozen profit rate. See the migration script
+// for why this is safe to compute on the fly rather than store.
+public class CustomerPayment
+{
+    public int TransactionId { get; set; }
+    public DateTime TransactionDate { get; set; }
+    public int PlanId { get; set; }
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = null!;
+    public int? InstallmentNumber { get; set; }
+    public decimal TotalPayment { get; set; }
+    public decimal ProfitAmount { get; set; }
+    public decimal CostRecoveryAmount { get; set; }
+}

@@ -1,4 +1,4 @@
-﻿namespace InstallmentBusiness.Api.DTOs;
+namespace InstallmentBusiness.Api.DTOs;
 
 public record CreateExpenseDto(
     string Category,

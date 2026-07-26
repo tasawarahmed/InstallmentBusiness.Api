@@ -15,6 +15,7 @@ public interface IPlanService
     Task<InstallmentPlan?> GetByIdAsync(int planId);
     Task<List<InstallmentPlan>> ListAsync(string? status);
     Task<List<InstallmentPayment>> GetScheduleAsync(int planId);
+    Task<InstallmentPayment> RescheduleInstallmentAsync(int planId, int paymentId, DateTime newDueDate, string? reason);
 }
 
 public class PlanService : IPlanService
@@ -219,4 +220,35 @@ public class PlanService : IPlanService
             .Where(p => p.PlanId == planId)
             .OrderBy(p => p.InstallmentNumber)
             .ToListAsync();
+
+    // Only Pending/PartiallyPaid/Overdue installments can be rescheduled --
+    // a Paid or Waived installment is a settled historical fact, not
+    // something to move. Deliberately does not enforce chronological
+    // ordering against neighboring installments: RecordPaymentAsync
+    // allocates strictly by InstallmentNumber, never by DueDate, so an
+    // out-of-order due date doesn't break payment allocation -- it would
+    // only affect how a schedule displays, which is a UI decision, not
+    // something to block here.
+    public async Task<InstallmentPayment> RescheduleInstallmentAsync(int planId, int paymentId, DateTime newDueDate, string? reason)
+    {
+        var installment = await _db.InstallmentPayments
+            .FirstOrDefaultAsync(p => p.PaymentId == paymentId && p.PlanId == planId)
+            ?? throw new KeyNotFoundException($"Installment {paymentId} not found on plan {planId}.");
+
+        if (installment.Status is "Paid" or "Waived")
+            throw new InvalidOperationException(
+                $"Cannot reschedule an installment that is already {installment.Status}.");
+
+        var oldDueDate = installment.DueDate;
+        installment.DueDate = newDueDate;
+
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            var note = $"Rescheduled from {oldDueDate:yyyy-MM-dd} to {newDueDate:yyyy-MM-dd}: {reason}";
+            installment.Notes = string.IsNullOrWhiteSpace(installment.Notes) ? note : $"{installment.Notes} | {note}";
+        }
+
+        await _db.SaveChangesAsync();
+        return installment;
+    }
 }

@@ -9,6 +9,10 @@ public record CreatePlanProposalDto(
 
 public record AddGuarantorToPlanDto(int GuarantorId);
 
+// reason is optional but recommended -- it's appended to the installment's
+// Notes as a lightweight audit trail (who/why isn't tracked beyond this).
+public record RescheduleInstallmentDto(DateTime NewDueDate, string? Reason);
+
 // Down payment is collected at the moment of finalization -- these let the
 // caller record how it was actually received.
 public record FinalizePlanDto(string? DownPaymentMethod, string? DownPaymentReferenceNo);
