@@ -30,21 +30,17 @@ END
 GO
 
 -- ───────────────────────────────────────────────────────────────────────────
--- 2. Migrate any existing single-guarantor data -- only if the old column
---    still exists, and skip rows already migrated
+-- 2. (Removed) Originally migrated existing single-guarantor data into the
+--    new junction table, for the one-time case of adopting an already-populated
+--    database that still used the old GuarantorId column. That migration
+--    already happened, once, by hand, against this project's original dev
+--    database before the automated system existed -- it doesn't need to run
+--    again there (DbUp will never re-run this script on that database) and
+--    it can never do anything useful on a database built fresh from 0000
+--    onward, since InstallmentPlans always has zero rows at this exact point
+--    in that sequence. Removed entirely rather than left as dead code, after
+--    it was reported to fail during a from-scratch build on .NET 8.
 -- ───────────────────────────────────────────────────────────────────────────
---IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='InstallmentPlans' AND COLUMN_NAME='GuarantorId')
---BEGIN
---    INSERT INTO [dbo].[PlanGuarantors] (PlanId, GuarantorId)
---    SELECT ip.PlanId, ip.GuarantorId
---    FROM [dbo].[InstallmentPlans] ip
---    WHERE ip.GuarantorId IS NOT NULL
---    AND NOT EXISTS (
---        SELECT 1 FROM [dbo].[PlanGuarantors] pg
---        WHERE pg.PlanId = ip.PlanId AND pg.GuarantorId = ip.GuarantorId
---    )
---END
---GO
 
 -- ───────────────────────────────────────────────────────────────────────────
 -- 3. Rebuild vw_GuarantorPlanCount to use the junction table
